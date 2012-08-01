@@ -178,11 +178,16 @@ function parse_custom_post_type_permalinks( $post_link, $post, $leavename, $samp
 	}
 
 	$post_type = get_post_type_object( $post->post_type );
+	$permastruct = get_option( $post_type->name . '_permalink_structure' );
 
-	if ( isset( $post_type->rewrite[ 'permastruct' ] ) )
+	// prefer option over default
+	if ( $permastruct ) {
+		$permalink = $permastruct;
+	} elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) ) {
 		$permalink = $post_type->rewrite[ 'permastruct' ];
-	else
+	} else {
 		return $post_link;
+	}
 
 	$permalink = apply_filters('pre_post_link', $permalink, $post, $leavename);
 
