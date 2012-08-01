@@ -13,11 +13,13 @@ eg:
 
 ```php
 <?php
+
 register_post_type( 'my_type', array(
-		...
-		'rewrite' => array( 'permastruct' => '/%custom_taxonomy%/%author%/%postname%/' ),
+	...
+	'rewrite' => array( 'permastruct' => '/%custom_taxonomy%/%author%/%postname%/' ),
  	...
 ) );
+
 ?>
 ```
 
