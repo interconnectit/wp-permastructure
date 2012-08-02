@@ -128,6 +128,9 @@ class custom_post_type_permalinks {
 			if ( ! is_array( $type->rewrite ) || ! isset( $type->rewrite[ 'permastruct' ] ) )
 				continue;
 
+			// remove default struct rules
+			add_filter( $type->name . '_rewrite_rules', create_function( '$rules', 'return array();' ) );
+
 			if ( ! isset( $permastructs[ $type->rewrite[ 'permastruct' ] ] ) )
 				$permastructs[ $type->rewrite[ 'permastruct' ] ] = array();
 
@@ -139,7 +142,7 @@ class custom_post_type_permalinks {
 
 			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false );
 			foreach( $post_type_rules_temp as $regex => $query )
-				$rules[ $regex ] = $query . '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) );
+				$rules[ $regex ] = $query . ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
 
 		}
 
