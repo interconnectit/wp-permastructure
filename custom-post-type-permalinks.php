@@ -28,12 +28,13 @@ License: GPLv2 or later
  * in admin.
  */
 
-if ( class_exists( custom_post_type_permalinks ) )
-	return;
+if ( ! class_exists( 'custom_post_type_permalinks' ) ) {
 
-add_action( 'init', array( 'custom_post_type_permalinks', 'instance' ), 1 );
+add_action( 'init', array( 'custom_post_type_permalinks', 'instance' ), 0 );
 
 class custom_post_type_permalinks {
+
+	public $settings_section = 'custom_post_type_permalinks';
 
 	/**
 	 * Reusable object instance.
@@ -50,7 +51,6 @@ class custom_post_type_permalinks {
 	 * @return void
 	 */
 	public static function instance() {
-
 		null === self :: $instance AND self :: $instance = new self;
 		return self :: $instance;
 	}
@@ -62,40 +62,41 @@ class custom_post_type_permalinks {
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 
 		// add our new peramstructs to the rewrite rules
-		add_filter( 'post_rewrite_rules', 'add_permastructs' );
+		add_filter( 'post_rewrite_rules', array( $this, 'add_permastructs' ) );
 
 		// parse the generated links
-		add_filter( 'post_type_link', 'parse_permalinks', 10, 4 );
+		add_filter( 'post_type_link', array( $this, 'parse_permalinks' ), 10, 4 );
 
 		// that's it!
 
 	}
 
 
-	public function init() {
+	public function admin_init() {
 
 		add_settings_section(
-			'custom_post_type_permalinks',
+			$this->settings_section,
 			__( 'Other post type permalink settings' ),
 			array( $this, 'settings_section' ),
-			'permalink' );
+			'permalink'
+		);
 
 		foreach( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			$id = $type->name . '_permalink_structure';
 
-			// commented out - we only want fill in the options if the user specifies them, otherwise use default
+			// we only want fill in the options if the user specifies them, otherwise use default
 			//if ( is_array( $type->rewrite ) && isset( $type->rewrite[ 'permastruct' ] ) && ! get_option( $id ) )
 			//	add_option( $id, $type->rewrite[ 'permastruct' ] );
 
 			register_setting( 'permalink', $id, 'sanitize_text_field' );
 			add_settings_field(
-							   $id,
-							   __( $type->label . ' permalink structure' ),
-							   array( $this, 'permalink_field' ),
-							   'permalink',
-							   'custom_post_type_permalinks',
-							   array( 'id' => $id, 'permastruct' => get_option( $id ) )
-							);
+				$id,
+				__( $type->label . ' permalink structure' ),
+				array( $this, 'permalink_field' ),
+				'permalink',
+				$this->settings_section,
+				array( 'id' => $id )
+			);
 		}
 
 	}
@@ -107,7 +108,7 @@ class custom_post_type_permalinks {
 
 
 	public function permalink_field( $args ) {
-		echo '<input type="text" class="regular-text code" value="' . esc_attr( $args[ 'permastruct' ] ) . '" id="' . $args[ 'id' ] . '" name="' . $args[ 'id' ] . '" />';
+		echo '<input type="text" class="regular-text code" value="' . esc_attr( get_option( $args[ 'id' ] ) ) . '" id="' . $args[ 'id' ] . '" name="' . $args[ 'id' ] . '" />';
 	}
 
 	
@@ -121,7 +122,7 @@ class custom_post_type_permalinks {
 		foreach( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			// add/override the custom permalink structure if set in options
 			$post_type_permastruct = get_option( $type->name . '_permalink_structure' );
-			if ( $post_type_permastruct ) {
+			if ( $post_type_permastruct && ! empty( $post_type_permastruct ) ) {
 				if ( ! is_array( $type->rewrite ) )
 					$type->rewrite = array();
 				$type->rewrite[ 'permastruct' ] = $post_type_permastruct;
@@ -170,7 +171,7 @@ class custom_post_type_permalinks {
 		$taxonomies = get_object_taxonomies( $post->post_type );
 
 		foreach( $taxonomies as $taxonomy )
-			$rewritecode[] = "%{$taxonomy}%";
+			$rewritecode[] = '%' . $taxonomy . '%';
 
 		if ( is_object($id) && isset($id->filter) && 'sample' == $id->filter ) {
 			$post = $id;
@@ -184,9 +185,9 @@ class custom_post_type_permalinks {
 		$permastruct = get_option( $post_type->name . '_permalink_structure' );
 
 		// prefer option over default
-		if ( $permastruct ) {
+		if ( $permastruct && ! empty( $permastruct ) ) {
 			$permalink = $permastruct;
-		} elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) ) {
+		} elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) && ! empty( $post_type->rewrite[ 'permastruct' ] ) ) {
 			$permalink = $post_type->rewrite[ 'permastruct' ];
 		} else {
 			return $post_link;
@@ -254,6 +255,8 @@ class custom_post_type_permalinks {
 
 }
 
+}
+
 if ( ! function_exists( 'get_term_parents' ) ) {
 
 	/**
@@ -296,9 +299,10 @@ if ( ! function_exists( 'get_term_parents' ) ) {
 // patch for WP not saving settings registered to the permalinks page
 if ( ! function_exists( 'enable_permalinks_settings' ) ) {
 
-	// process the $_POST variable after all settings have been registered
-	// so they are whitelisted
-	add_action( 'admin_init', 'enable_permalinks_settings', 999999 );
+	// process the $_POST variable after all settings have been
+	// registered so they are whitelisted
+	add_action( 'admin_init', 'enable_permalinks_settings', 300 );
+
 	function enable_permalinks_settings() {
 		global $new_whitelist_options;
 
@@ -326,7 +330,10 @@ if ( ! function_exists( 'enable_permalinks_settings' ) ) {
 					if ( !is_array($value) )
 						$value = trim($value);
 					$value = stripslashes_deep($value);
-					update_option($option, $value);
+					if ( ! get_option( $option ) )
+						add_option( $option, $value );
+					else
+						update_option( $option, $value );
 				}
 			}
 
