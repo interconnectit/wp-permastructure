@@ -84,10 +84,6 @@ class custom_post_type_permalinks {
 		foreach( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			$id = $type->name . '_permalink_structure';
 
-			// we only want fill in the options if the user specifies them, otherwise use default
-			//if ( is_array( $type->rewrite ) && isset( $type->rewrite[ 'permastruct' ] ) && ! get_option( $id ) )
-			//	add_option( $id, $type->rewrite[ 'permastruct' ] );
-
 			register_setting( 'permalink', $id, 'sanitize_text_field' );
 			add_settings_field(
 				$id,
