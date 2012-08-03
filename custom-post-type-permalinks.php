@@ -11,19 +11,19 @@ License: GPLv2 or later
 
 /**
  * Usage:
- * 
+ *
  * When registering a post type you can add a value to the rewrite
  * property with the key 'permastruct' to define your default
  * permalink structure.
- * 
+ *
  * eg:
- * 
+ *
  * register_post_type( 'my_type', array(
  * 		...
  * 		'rewrite' => array( 'permastruct' => '/%custom_taxonomy%/%author%/%postname%/' ),
  *  	...
  * ) );
- * 
+ *
  * Alternatively you can set the permalink structure from the permalinks settings page
  * in admin.
  */
@@ -84,7 +84,7 @@ class custom_post_type_permalinks {
 		foreach( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			$id = $type->name . '_permalink_structure';
 
-			register_setting( 'permalink', $id, 'sanitize_text_field' );
+			register_setting( 'permalink', $id, array( $this, 'sanitize_permalink' ) );
 			add_settings_field(
 				$id,
 				__( $type->label . ' permalink structure' ),
@@ -107,7 +107,14 @@ class custom_post_type_permalinks {
 		echo '<input type="text" class="regular-text code" value="' . esc_attr( get_option( $args[ 'id' ] ) ) . '" id="' . $args[ 'id' ] . '" name="' . $args[ 'id' ] . '" />';
 	}
 
-	
+
+	public function sanitize_permalink( $permalink ) {
+		if ( ! empty( $permalink ) && ! preg_match( '/%(post_id|postname)%/', $permalink ) )
+			add_settings_error( 'permalink_structure', 10, __( 'Permalink structures must contain at least <code>%post_id%</code> or <code>%postname%</code>.' ) );
+		return preg_replace( '/\s+/', '', $permalink );
+	}
+
+
 	public function add_permastructs( $rules ) {
 		global $wp_rewrite;
 
@@ -329,10 +336,7 @@ if ( ! function_exists( 'enable_permalinks_settings' ) ) {
 					if ( !is_array($value) )
 						$value = trim($value);
 					$value = stripslashes_deep($value);
-					if ( ! get_option( $option ) )
-						add_option( $option, $value );
-					else
-						update_option( $option, $value );
+					update_option( $option, $value );
 				}
 			}
 
