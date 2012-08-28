@@ -37,6 +37,11 @@ class custom_post_type_permalinks {
 	public $settings_section = 'custom_post_type_permalinks';
 
 	/**
+	 * @var protect endpoints from being vaped if a category/tag slug is set
+	 */
+	protected $endpoints;
+
+	/**
 	 * Reusable object instance.
 	 *
 	 * @type object
@@ -58,6 +63,9 @@ class custom_post_type_permalinks {
 
 	public function __construct() {
 
+		// Late init to protect endpoints
+		add_action( 'init', array( $this, 'late_init' ), 999 );
+
 		// Settings fields on permalinks page
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 
@@ -69,6 +77,12 @@ class custom_post_type_permalinks {
 
 		// that's it!
 
+	}
+
+
+	public function late_init() {
+		global $wp_rewrite;
+		$this->endpoints = $wp_rewrite->endpoints;
 	}
 
 
@@ -118,6 +132,10 @@ class custom_post_type_permalinks {
 	public function add_permastructs( $rules ) {
 		global $wp_rewrite;
 
+		// restore endpoints
+		if ( empty( $wp_rewrite->endpoints ) && ! empty( $this->endpoints ) )
+			$wp_rewrite->endpoints = $this->endpoints;
+
 		$permastruct = $wp_rewrite->permalink_structure;
 		$permastructs = array( $permastruct => array( 'post' ) );
 
@@ -148,8 +166,12 @@ class custom_post_type_permalinks {
 		foreach( $permastructs as $struct => $post_types ) {
 
 			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false );
-			foreach( $post_type_rules_temp as $regex => $query )
-				$rules[ $regex ] = $query . ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
+			foreach( $post_type_rules_temp as $regex => $query ) {
+				if ( preg_match( '/(&|\?)(cpage|attachment|p|name|pagename)=/', $query ) )
+					$rules[ $regex ] = $query . ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
+				else
+					unset( $rules[ $regex ] );
+			}
 
 		}
 
