@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Custom Post Type Permalinks
-Plugin URI: https://github.com/interconnectit/custom-post-type-permalinks
+Plugin Name: WP Permastructure
+Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 0.1
+Version: 1.0
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -28,13 +28,13 @@ License: GPLv2 or later
  * in admin.
  */
 
-if ( ! class_exists( 'custom_post_type_permalinks' ) ) {
+if ( ! class_exists( 'wp_permastructure' ) ) {
 
-add_action( 'init', array( 'custom_post_type_permalinks', 'instance' ), 0 );
+add_action( 'init', array( 'wp_permastructure', 'instance' ), 0 );
 
-class custom_post_type_permalinks {
+class wp_permastructure {
 
-	public $settings_section = 'custom_post_type_permalinks';
+	public $settings_section = 'wp_permastructure';
 
 	/**
 	 * @var protect endpoints from being vaped if a category/tag slug is set
@@ -86,11 +86,14 @@ class custom_post_type_permalinks {
 	}
 
 
+	/**
+	 * Add the settings UI
+	 */
 	public function admin_init() {
 
 		add_settings_section(
 			$this->settings_section,
-			__( 'Other post type permalink settings' ),
+			__( 'Custom post type permalink settings' ),
 			array( $this, 'settings_section' ),
 			'permalink'
 		);
@@ -122,6 +125,14 @@ class custom_post_type_permalinks {
 	}
 
 
+	/**
+	 * Runs a simple sanitisation of the custom post type permalink structures
+	 * and adds an error if no post ID or post name present
+	 *
+	 * @param string $permalink The permalink structure
+	 *
+	 * @return string    Sanitised permalink structure
+	 */
 	public function sanitize_permalink( $permalink ) {
 		if ( ! empty( $permalink ) && ! preg_match( '/%(post_id|postname)%/', $permalink ) )
 			add_settings_error( 'permalink_structure', 10, __( 'Permalink structures must contain at least <code>%post_id%</code> or <code>%postname%</code>.' ) );
@@ -129,6 +140,13 @@ class custom_post_type_permalinks {
 	}
 
 
+	/**
+	 * This function removes unnecessary rules and adds in the new rules
+	 *
+	 * @param array $rules The rewrite rules array for post permalinks
+	 *
+	 * @return array    The modified rules array
+	 */
 	public function add_permastructs( $rules ) {
 		global $wp_rewrite;
 
@@ -179,6 +197,17 @@ class custom_post_type_permalinks {
 	}
 
 
+	/**
+	 * Generic version of standard permalink parsing function. Adds support for
+	 * custom taxonomies as well as the standard %author% etc...
+	 *
+	 * @param string $post_link The post URL
+	 * @param object $post      The post object
+	 * @param bool $leavename Passed to pre_post_link filter
+	 * @param bool $sample    Used in admin if generating an example permalink
+	 *
+	 * @return string    The parsed permalink
+	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample ) {
 
 		$id = $post->ID;
@@ -324,7 +353,9 @@ if ( ! function_exists( 'get_term_parents' ) ) {
 }
 
 
-// patch for WP not saving settings registered to the permalinks page
+/**
+ * Patch for WP not saving settings registered to the permalinks page
+ */
 if ( ! function_exists( 'enable_permalinks_settings' ) ) {
 
 	// process the $_POST variable after all settings have been
