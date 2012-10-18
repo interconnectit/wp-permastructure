@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.0
+Version: 1.1
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -157,6 +157,9 @@ class wp_permastructure {
 		$permastruct = $wp_rewrite->permalink_structure;
 		$permastructs = array( $permastruct => array( 'post' ) );
 
+		// force page rewrite to bottom
+		$wp_rewrite->use_verbose_page_rules = false;
+
 		// get permastructs foreach custom post type and group any that use the same struct
 		foreach( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			// add/override the custom permalink structure if set in options
@@ -180,10 +183,12 @@ class wp_permastructure {
 			$permastructs[ $type->rewrite[ 'permastruct' ] ][] = $type->name;
 		}
 
+		$rules = array();
+
 		// add our permastructs scoped to the post types - overwriting any keys that already exist
 		foreach( $permastructs as $struct => $post_types ) {
 
-			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false );
+			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false, true, false, false, true );
 			foreach( $post_type_rules_temp as $regex => $query ) {
 				if ( preg_match( '/(&|\?)(cpage|attachment|p|name|pagename)=/', $query ) )
 					$rules[ $regex ] = $query . ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );

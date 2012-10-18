@@ -4,7 +4,7 @@ Donate link: http://interconnectit.com/
 Tags: permalinks, rewrite rules, custom post types, custom taxonomies, URLs, links
 Requires at least: 3.3
 Tested up to: 3.4.1
-Stable tag: 1.0
+Stable tag: 1.1
 
 Adds the ability to configure permalinks for custom post types using rewrite tags like %post_id% and %author%.
 
@@ -62,5 +62,7 @@ None so far.
 1. The extended permalink settings panel
 
 == Changelog ==
+
+* 1.1: Fixed problem with WP walk_dirs and using %category% in permalink - overly greedy match
 
 * 1.0: Initial import
