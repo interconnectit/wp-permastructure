@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.1
+Version: 1.2
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -26,6 +26,14 @@ License: GPLv2 or later
  *
  * Alternatively you can set the permalink structure from the permalinks settings page
  * in admin.
+ */
+
+/**
+ * Changelog
+ *
+ * 1.2: Fixed attachment URL rewrites, fixed edge case where permastruct is %postname% only
+ * 1.1: Fixed problem with WP walk_dirs and using %category% in permalink - overly greedy match
+ * 1.0: Initial import
  */
 
 if ( ! class_exists( 'wp_permastructure' ) ) {
@@ -188,11 +196,17 @@ class wp_permastructure {
 		// add our permastructs scoped to the post types - overwriting any keys that already exist
 		foreach( $permastructs as $struct => $post_types ) {
 
+			// if a struct is %postname% only then we need page rules first - if not found wp tries again with later rules
+			if ( preg_match( '/^\/?%postname%\/?$/', $struct ) )
+				$wp_rewrite->use_verbose_page_rules = true;
+
+			// get rewrite rules without walking dirs
 			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false, true, false, false, true );
 			foreach( $post_type_rules_temp as $regex => $query ) {
-				if ( preg_match( '/(&|\?)(cpage|attachment|p|name|pagename)=/', $query ) )
-					$rules[ $regex ] = $query . ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
-				else
+				if ( preg_match( '/(&|\?)(cpage|attachment|p|name|pagename)=/', $query ) ) {
+					$post_type_query = ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
+					$rules[ $regex ] = $query . ( preg_match( '/(&|\?)(attachment|pagename)=/', $query ) ? '' : $post_type_query );
+				} else
 					unset( $rules[ $regex ] );
 			}
 
