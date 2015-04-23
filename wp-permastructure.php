@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.2
+Version: 1.4
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -31,6 +31,8 @@ License: GPLv2 or later
 /**
  * Changelog
  *
+ * 1.4: Handles sample filters without the need for the get post call
+ * 1.3: Fixed permalink sanitisation, was truncating the third placeholder for some reason
  * 1.2: Fixed attachment URL rewrites, fixed edge case where permastruct is %postname% only
  * 1.1: Fixed problem with WP walk_dirs and using %category% in permalink - overly greedy match
  * 1.0: Initial import
@@ -80,7 +82,8 @@ class wp_permastructure {
 		// add our new peramstructs to the rewrite rules
 		add_filter( 'post_rewrite_rules', array( $this, 'add_permastructs' ) );
 
-		// parse the generated links
+		// parse the generated links - enable custom taxonomies for built in post links
+		add_filter( 'post_link', array( $this, 'parse_permalinks' ), 10, 3 );
 		add_filter( 'post_type_link', array( $this, 'parse_permalinks' ), 10, 4 );
 
 		// that's it!
@@ -143,8 +146,19 @@ class wp_permastructure {
 	 */
 	public function sanitize_permalink( $permalink ) {
 		if ( ! empty( $permalink ) && ! preg_match( '/%(post_id|postname)%/', $permalink ) )
-			add_settings_error( 'permalink_structure', 10, __( 'Permalink structures must contain at least <code>%post_id%</code> or <code>%postname%</code>.' ) );
-		return preg_replace( '/\s+/', '', $permalink );
+			add_settings_error( 'permalink_structure', 10, __( 'Permalink structures must contain at least the <code>%post_id%</code> or <code>%postname%</code>.' ) );
+
+		$filtered = wp_check_invalid_utf8( $permalink );
+
+		if ( strpos($filtered, '<') !== false ) {
+			$filtered = wp_pre_kses_less_than( $filtered );
+			// This will strip extra whitespace for us.
+			$filtered = wp_strip_all_tags( $filtered, true );
+		} else {
+			$filtered = trim( preg_replace('/[\r\n\t ]+/', ' ', $filtered) );
+		}
+
+		return preg_replace( '/[^a-zA-Z0-9\/\%_-]*/', '', $filtered );
 	}
 
 
@@ -227,7 +241,7 @@ class wp_permastructure {
 	 *
 	 * @return string    The parsed permalink
 	 */
-	public function parse_permalinks( $post_link, $post, $leavename, $sample ) {
+	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
 
 		$id = $post->ID;
 
@@ -249,11 +263,11 @@ class wp_permastructure {
 		foreach( $taxonomies as $taxonomy )
 			$rewritecode[] = '%' . $taxonomy . '%';
 
-		if ( is_object($id) && isset($id->filter) && 'sample' == $id->filter ) {
-			$post = $id;
+		if ( is_object($post) && isset($post->filter) && 'sample' == $post->filter ) {
+			$post = $post;
 			$sample = true;
 		} else {
-			$post = &get_post($id);
+			$post = get_post($id);
 			$sample = false;
 		}
 
@@ -348,7 +362,7 @@ if ( ! function_exists( 'get_term_parents' ) ) {
 	 */
 	function get_term_parents( $id, $taxonomy, $link = false, $separator = '/', $nicename = false, $visited = array() ) {
 		$chain = '';
-		$parent = &get_term( $id, $taxonomy );
+		$parent = get_term( $id, $taxonomy );
 		if ( is_wp_error( $parent ) )
 			return $parent;
 
