@@ -337,7 +337,7 @@ class wp_permastructure {
 			$permalink = home_url( str_replace($rewritecode, $rewritereplace, $permalink) );
 			$permalink = user_trailingslashit($permalink, 'single');
 		} else { // if they're not using the fancy permalink option
-			$permalink = home_url('?p=' . $post->ID);
+			$permalink = home_url('?post_type='.$post->post_type.'&p=' . $post->ID);
 		}
 
 		return $permalink;
