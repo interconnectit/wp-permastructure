@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.4.1
+Version: 1.4.2
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -247,8 +247,6 @@ class wp_permastructure {
 		if ( !post_type_exists( $post->post_type ) )
 			return $post_link;
 
-		$id = $post->ID;
-
 		$rewritecode = array(
 			'%year%',
 			'%monthnum%',
@@ -267,13 +265,8 @@ class wp_permastructure {
 		foreach( $taxonomies as $taxonomy )
 			$rewritecode[] = '%' . $taxonomy . '%';
 
-		if ( is_object($post) && isset($post->filter) && 'sample' == $post->filter ) {
-			$post = $post;
+		if ( is_object($post) && isset($post->filter) && 'sample' == $post->filter )
 			$sample = true;
-		} else {
-			$post = get_post($id);
-			$sample = false;
-		}
 
 		$post_type = get_post_type_object( $post->post_type );
 		$permastruct = get_option( $post_type->name . '_permalink_structure' );
