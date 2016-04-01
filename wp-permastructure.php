@@ -241,7 +241,7 @@ class wp_permastructure {
 	 *
 	 * @return string    The parsed permalink
 	 */
-	public function parse_permalinks( $post_link, WP_Post $post, $leavename, $sample = false ) {
+	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
 
 		// Make a stupid request and we'll do nothing.
 		if ( !post_type_exists( $post->post_type ) )
