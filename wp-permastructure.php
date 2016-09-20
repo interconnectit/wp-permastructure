@@ -294,8 +294,18 @@ class wp_permastructure {
 					$terms = get_the_terms( $post->ID, $taxonomy );
 					if ( $terms ) {
 						usort($terms, '_usort_terms_by_ID'); // order by ID
-						$term = $terms[0]->slug;
-						if ( $taxonomy_object->hierarchical && $parent = $terms[0]->parent )
+
+						/**
+						 * Filter the term that gets used in the `$tax` permalink token.
+						 *
+						 * @param WP_Term  $term  The `$tax` term to use in the permalink.
+						 * @param array    $terms Array of all `$tax` terms associated with the post.
+						 * @param WP_Post  $post  The post in question.
+						 */
+						$term_object = apply_filters( "post_link_{$taxonomy}", reset( $terms ), $terms, $post );
+
+						$term = $term_object->slug;
+						if ( $taxonomy_object->hierarchical && $parent = $term_object->parent )
 							$term = get_term_parents($parent, $taxonomy, false, '/', true) . $term;
 					}
 					// show default category in permalinks, without
