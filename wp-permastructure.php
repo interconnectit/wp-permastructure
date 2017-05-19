@@ -243,7 +243,7 @@ class wp_permastructure {
 	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
 	    // Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
-	    if ( !is_a( $post, 'WP_Posts' ) ) {
+	    if ( !is_a( $post, 'WP_Post' ) ) {
             return $post_link;
         }
 
