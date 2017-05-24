@@ -242,10 +242,10 @@ class wp_permastructure {
 	 * @return string    The parsed permalink
 	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
-	    // Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
-	    if ( !is_a( $post, 'WP_Post' ) ) {
-            return $post_link;
-        }
+		// Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
+		if ( !is_a( $post, 'WP_Post' ) ) {
+			return $post_link;
+		}
 
 		// Make a stupid request and we'll do nothing.
 		if ( !post_type_exists( $post->post_type ) )
