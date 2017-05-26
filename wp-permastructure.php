@@ -234,16 +234,19 @@ class wp_permastructure {
 	 * Generic version of standard permalink parsing function. Adds support for
 	 * custom taxonomies as well as the standard %author% etc...
 	 *
-	 * @param string $post_link The post URL
-	 * @param WP_Post $post      The post object
-	 * @param bool $leavename Passed to pre_post_link filter
-	 * @param bool $sample    Used in admin if generating an example permalink
+	 * @param string $post_link             The post URL
+	 * @param WP_Post|object|int|null $post The post object
+	 * @param bool $leavename               Passed to pre_post_link filter
+	 * @param bool $sample                  Used in admin if generating an example permalink
 	 *
-	 * @return string    The parsed permalink
+	 * @return string The parsed permalink
 	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
-		// Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
-		if ( !is_a( $post, 'WP_Post' ) ) {
+		// Ensure WP_Post object. Some plugins pass arbitrary objects or other data.
+		$post = get_post( $post );
+
+		// Only bail if the above get_post() didn't work.
+		if ( ! $post instanceof WP_Post ) {
 			return $post_link;
 		}
 
