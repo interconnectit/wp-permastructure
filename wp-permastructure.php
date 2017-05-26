@@ -316,8 +316,9 @@ class wp_permastructure {
 						$term_object = apply_filters( "post_link_{$taxonomy}", reset( $terms ), $terms, $post );
 
 						$term = $term_object->slug;
-						if ( $taxonomy_object->hierarchical && $parent = $term_object->parent )
-							$term = get_term_parents($parent, $taxonomy, false, '/', true) . $term;
+						if ( $taxonomy_object->hierarchical && $parent = $term_object->parent ) {
+							$term = get_term_parents( $parent, $taxonomy, false, '/', true ) . $term;
+						}
 					}
 					// show default category in permalinks, without
 					// having to assign it explicitly
@@ -331,14 +332,13 @@ class wp_permastructure {
 			}
 
 			$author = '';
-			if ( strpos($permalink, '%author%') !== false ) {
-				$authordata = get_userdata($post->post_author);
+			if ( strpos( $permalink, '%author%' ) !== false ) {
+				$authordata = get_userdata( $post->post_author );
 				$author = $authordata->user_nicename;
 			}
 
-			$date = explode(" ",date('Y m d H i s', $unixtime));
-			$rewritereplace =
-			array(
+			$date = explode( " ", date( 'Y m d H i s', $unixtime ) );
+			$rewritereplace = array(
 				$date[0],
 				$date[1],
 				$date[2],
@@ -352,10 +352,10 @@ class wp_permastructure {
 			);
 			foreach( $taxonomies as $taxonomy )
 				$rewritereplace[] = $replace_terms[ $taxonomy ];
-			$permalink = home_url( str_replace($rewritecode, $rewritereplace, $permalink) );
-			$permalink = user_trailingslashit($permalink, 'single');
+			$permalink = home_url( str_replace( $rewritecode, $rewritereplace, $permalink ) );
+			$permalink = user_trailingslashit( $permalink, 'single' );
 		} else { // if they're not using the fancy permalink option
-			$permalink = home_url('?p=' . $post->ID);
+			$permalink = home_url( '?p=' . $post->ID );
 		}
 
 		return $permalink;
