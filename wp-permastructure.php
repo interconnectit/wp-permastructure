@@ -300,10 +300,10 @@ class wp_permastructure {
 				if ( strpos($permalink, '%'. $taxonomy .'%') !== false ) {
 					$terms = get_the_terms( $post->ID, $taxonomy );
 					if ( $terms ) {
-						if( function_exists( 'wp_list_sort' ) ) {
-						    $terms = wp_list_sort( $terms, 'term_id', 'ASC' );  // order by term_id ASC
+						if ( function_exists( 'wp_list_sort' ) ) {
+							$terms = wp_list_sort( $terms, 'term_id', 'ASC' );  // order by term_id ASC
 						} else {
-						    usort( $terms, '_usort_terms_by_ID' ); // order by term_id ASC
+							usort( $terms, '_usort_terms_by_ID' ); // order by term_id ASC
 						}
 
 						/**
