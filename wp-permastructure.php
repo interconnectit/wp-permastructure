@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.4.2
+Version: 1.4.3
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -235,13 +235,17 @@ class wp_permastructure {
 	 * custom taxonomies as well as the standard %author% etc...
 	 *
 	 * @param string $post_link The post URL
-	 * @param object $post      The post object
+	 * @param WP_Post $post      The post object
 	 * @param bool $leavename Passed to pre_post_link filter
 	 * @param bool $sample    Used in admin if generating an example permalink
 	 *
 	 * @return string    The parsed permalink
 	 */
-	public function parse_permalinks( $post_link, WP_Post $post, $leavename, $sample = false ) {
+	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
+		// Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
+		if ( !is_a( $post, 'WP_Post' ) ) {
+			return $post_link;
+		}
 
 		// Make a stupid request and we'll do nothing.
 		if ( !post_type_exists( $post->post_type ) )
@@ -293,7 +297,11 @@ class wp_permastructure {
 				if ( strpos($permalink, '%'. $taxonomy .'%') !== false ) {
 					$terms = get_the_terms( $post->ID, $taxonomy );
 					if ( $terms ) {
-						usort($terms, '_usort_terms_by_ID'); // order by ID
+						if( function_exists( 'wp_list_sort' ) ) {
+						    $terms = wp_list_sort( $terms, 'term_id', 'ASC' );  // order by term_id ASC
+						} else {
+						    usort( $terms, '_usort_terms_by_ID' ); // order by term_id ASC
+						}
 
 						/**
 						 * Filter the term that gets used in the `$tax` permalink token.
