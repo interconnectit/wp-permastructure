@@ -234,18 +234,21 @@ class wp_permastructure {
 	 * Generic version of standard permalink parsing function. Adds support for
 	 * custom taxonomies as well as the standard %author% etc...
 	 *
-	 * @param string $post_link The post URL
-	 * @param WP_Post $post      The post object
-	 * @param bool $leavename Passed to pre_post_link filter
-	 * @param bool $sample    Used in admin if generating an example permalink
+	 * @param string $post_link             The post URL
+	 * @param WP_Post|object|int|null $post The post object
+	 * @param bool $leavename               Passed to pre_post_link filter
+	 * @param bool $sample                  Used in admin if generating an example permalink
 	 *
-	 * @return string    The parsed permalink
+	 * @return string The parsed permalink
 	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
-	    // Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
-	    if ( !is_a( $post, 'WP_Post' ) ) {
-            return $post_link;
-        }
+		// Ensure WP_Post object. Some plugins pass arbitrary objects or other data.
+		$post = get_post( $post );
+
+		// Only bail if the above get_post() didn't work.
+		if ( ! $post instanceof WP_Post ) {
+			return $post_link;
+		}
 
 		// Make a stupid request and we'll do nothing.
 		if ( !post_type_exists( $post->post_type ) )
@@ -297,10 +300,25 @@ class wp_permastructure {
 				if ( strpos($permalink, '%'. $taxonomy .'%') !== false ) {
 					$terms = get_the_terms( $post->ID, $taxonomy );
 					if ( $terms ) {
-						usort($terms, '_usort_terms_by_ID'); // order by ID
-						$term = $terms[0]->slug;
-						if ( $taxonomy_object->hierarchical && $parent = $terms[0]->parent )
-							$term = get_term_parents($parent, $taxonomy, false, '/', true) . $term;
+						if ( function_exists( 'wp_list_sort' ) ) {
+							$terms = wp_list_sort( $terms, 'term_id', 'ASC' );  // order by term_id ASC
+						} else {
+							usort( $terms, '_usort_terms_by_ID' ); // order by term_id ASC
+						}
+
+						/**
+						 * Filter the term that gets used in the `$tax` permalink token.
+						 *
+						 * @param WP_Term  $term  The `$tax` term to use in the permalink.
+						 * @param array    $terms Array of all `$tax` terms associated with the post.
+						 * @param WP_Post  $post  The post in question.
+						 */
+						$term_object = apply_filters( "post_link_{$taxonomy}", reset( $terms ), $terms, $post );
+
+						$term = $term_object->slug;
+						if ( $taxonomy_object->hierarchical && $parent = $term_object->parent ) {
+							$term = get_term_parents( $parent, $taxonomy, false, '/', true ) . $term;
+						}
 					}
 					// show default category in permalinks, without
 					// having to assign it explicitly
@@ -314,14 +332,13 @@ class wp_permastructure {
 			}
 
 			$author = '';
-			if ( strpos($permalink, '%author%') !== false ) {
-				$authordata = get_userdata($post->post_author);
+			if ( strpos( $permalink, '%author%' ) !== false ) {
+				$authordata = get_userdata( $post->post_author );
 				$author = $authordata->user_nicename;
 			}
 
-			$date = explode(" ",date('Y m d H i s', $unixtime));
-			$rewritereplace =
-			array(
+			$date = explode( " ", date( 'Y m d H i s', $unixtime ) );
+			$rewritereplace = array(
 				$date[0],
 				$date[1],
 				$date[2],
@@ -335,10 +352,10 @@ class wp_permastructure {
 			);
 			foreach( $taxonomies as $taxonomy )
 				$rewritereplace[] = $replace_terms[ $taxonomy ];
-			$permalink = home_url( str_replace($rewritecode, $rewritereplace, $permalink) );
-			$permalink = user_trailingslashit($permalink, 'single');
+			$permalink = home_url( str_replace( $rewritecode, $rewritereplace, $permalink ) );
+			$permalink = user_trailingslashit( $permalink, 'single' );
 		} else { // if they're not using the fancy permalink option
-			$permalink = home_url('?p=' . $post->ID);
+			$permalink = home_url( '?p=' . $post->ID );
 		}
 
 		return $permalink;
