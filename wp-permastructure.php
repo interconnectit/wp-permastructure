@@ -68,9 +68,9 @@ class wp_permastructure {
 	 * @return void
 	 */
 	public static function instance() {
-		null === self:: $instance AND self:: $instance = new self;
+		null === self::$instance AND self::$instance = new self;
 
-		return self:: $instance;
+		return self::$instance;
 	}
 
 
@@ -148,7 +148,7 @@ class wp_permastructure {
 	 * @return string    Sanitised permalink structure
 	 */
 	public function sanitize_permalink( $permalink ) {
-		if ( !empty( $permalink ) && !preg_match( '/%(post_id|postname)%/', $permalink ) ) {
+		if ( ! empty( $permalink ) && ! preg_match( '/%(post_id|postname)%/', $permalink ) ) {
 			add_settings_error( 'permalink_structure', 10, __( 'Permalink structures must contain at least the <code>%post_id%</code> or <code>%postname%</code>.' ) );
 		}
 
@@ -178,7 +178,7 @@ class wp_permastructure {
 		global $wp_rewrite;
 
 		// restore endpoints
-		if ( empty( $wp_rewrite->endpoints ) && !empty( $this->endpoints ) ) {
+		if ( empty( $wp_rewrite->endpoints ) && ! empty( $this->endpoints ) ) {
 			$wp_rewrite->endpoints = $this->endpoints;
 		}
 
@@ -192,15 +192,15 @@ class wp_permastructure {
 		foreach ( get_post_types( array( '_builtin' => false, 'public' => true ), 'objects' ) as $type ) {
 			// add/override the custom permalink structure if set in options
 			$post_type_permastruct = get_option( $type->name . '_permalink_structure' );
-			if ( $post_type_permastruct && !empty( $post_type_permastruct ) ) {
-				if ( !is_array( $type->rewrite ) ) {
+			if ( $post_type_permastruct && ! empty( $post_type_permastruct ) ) {
+				if ( ! is_array( $type->rewrite ) ) {
 					$type->rewrite = array();
 				}
 				$type->rewrite[ 'permastruct' ] = $post_type_permastruct;
 			}
 
 			// check we have a custom permalink structure
-			if ( !is_array( $type->rewrite ) || !isset( $type->rewrite[ 'permastruct' ] ) ) {
+			if ( ! is_array( $type->rewrite ) || ! isset( $type->rewrite[ 'permastruct' ] ) ) {
 				continue;
 			}
 
@@ -209,7 +209,7 @@ class wp_permastructure {
 				return array();
 			}, 11 );
 
-			if ( !isset( $permastructs[ $type->rewrite[ 'permastruct' ] ] ) ) {
+			if ( ! isset( $permastructs[ $type->rewrite[ 'permastruct' ] ] ) ) {
 				$permastructs[ $type->rewrite[ 'permastruct' ] ] = array();
 			}
 
@@ -259,12 +259,12 @@ class wp_permastructure {
 	 */
 	public function parse_permalinks( $post_link, $post, $leavename, $sample = false ) {
 		// Yoast Sitemap plug-in doesn't pass a WP_Post object causing a fatal, so we'll check for it and return.
-		if ( !is_a( $post, 'WP_Post' ) ) {
+		if ( ! is_a( $post, 'WP_Post' ) ) {
 			return $post_link;
 		}
 
 		// Make a stupid request and we'll do nothing.
-		if ( !post_type_exists( $post->post_type ) ) {
+		if ( ! post_type_exists( $post->post_type ) ) {
 			return $post_link;
 		}
 
@@ -302,7 +302,7 @@ class wp_permastructure {
 		if ( !empty( $permastruct ) ) {
 			$permalink = $permastruct;
 		}
-		elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) && !empty( $post_type->rewrite[ 'permastruct' ] ) ) {
+		elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) && ! empty( $post_type->rewrite[ 'permastruct' ] ) ) {
 			$permalink = $post_type->rewrite[ 'permastruct' ];
 		}
 		else {
@@ -344,7 +344,7 @@ class wp_permastructure {
 					}
 					// show default category in permalinks, without
 					// having to assign it explicitly
-					if ( empty( $term ) && $taxonomy == 'category' ) {
+					if ( empty( $term ) && $taxonomy === 'category' ) {
 						$default_category = get_category( get_option( 'default_category' ) );
 						$term = is_wp_error( $default_category ) ? '' : $default_category->slug;
 					}
@@ -387,57 +387,55 @@ class wp_permastructure {
 
 }
 
-}
-
 if ( ! function_exists( 'get_term_parents' ) ) {
 
-/**
- * Retrieve term parents with separator.
- *
- * @param int    $id Term ID.
- * @param string $taxonomy The taxonomy the term belongs to.
- * @param bool   $link Optional, default is false. Whether to format with link.
- * @param string $separator Optional, default is '/'. How to separate categories.
- * @param bool   $nicename Optional, default is false. Whether to use nice name for display.
- * @param array  $visited Optional. Already linked to categories to prevent duplicates.
- *
- * @return string
- */
-function get_term_parents(
-	$id,
-	$taxonomy,
-	$link = false,
-	$separator = '/',
-	$nicename = false,
-	$visited = array()
-) {
-	$chain = '';
-	$parent = get_term( $id, $taxonomy );
-	if ( is_wp_error( $parent ) ) {
-		return $parent;
-	}
+	/**
+	 * Retrieve term parents with separator.
+	 *
+	 * @param int    $id Term ID.
+	 * @param string $taxonomy The taxonomy the term belongs to.
+	 * @param bool   $link Optional, default is false. Whether to format with link.
+	 * @param string $separator Optional, default is '/'. How to separate categories.
+	 * @param bool   $nicename Optional, default is false. Whether to use nice name for display.
+	 * @param array  $visited Optional. Already linked to categories to prevent duplicates.
+	 *
+	 * @return string
+	 */
+	function get_term_parents(
+		$id,
+		$taxonomy,
+		$link = false,
+		$separator = '/',
+		$nicename = false,
+		$visited = array()
+	) {
+		$chain = '';
+		$parent = get_term( $id, $taxonomy );
+		if ( is_wp_error( $parent ) ) {
+			return $parent;
+		}
 
-	if ( $nicename ) {
-		$name = $parent->slug;
-	}
-	else {
-		$name = $parent->cat_name;
-	}
+		if ( $nicename ) {
+			$name = $parent->slug;
+		}
+		else {
+			$name = $parent->cat_name;
+		}
 
-	if ( $parent->parent && ( $parent->parent != $parent->term_id ) && ! in_array( $parent->parent, $visited ) ) {
-		$visited[] = $parent->parent;
-		$chain .= get_term_parents( $parent->parent, $taxonomy, $link, $separator, $nicename, $visited );
-	}
+		if ( $parent->parent && ( $parent->parent != $parent->term_id ) && ! in_array( $parent->parent, $visited ) ) {
+			$visited[] = $parent->parent;
+			$chain .= get_term_parents( $parent->parent, $taxonomy, $link, $separator, $nicename, $visited );
+		}
 
-	if ( $link ) {
-		$chain .= '<a href="' . get_term_link( $parent->term_id, $taxonomy ) . '" title="' . esc_attr( sprintf( __( 'View all posts in %s' ), $parent->name ) ) . '">' . $name . '</a>' . $separator;
-	}
-	else {
-		$chain .= $name . $separator;
-	}
+		if ( $link ) {
+			$chain .= '<a href="' . get_term_link( $parent->term_id, $taxonomy ) . '" title="' . esc_attr( sprintf( __( 'View all posts in %s' ), $parent->name ) ) . '">' . $name . '</a>' . $separator;
+		}
+		else {
+			$chain .= $name . $separator;
+		}
 
-	return $chain;
-}
+		return $chain;
+	}
 
 }
 
@@ -447,47 +445,49 @@ function get_term_parents(
  */
 if ( ! function_exists( 'enable_permalinks_settings' ) ) {
 
-// process the $_POST variable after all settings have been
-// registered so they are whitelisted
-add_action( 'admin_init', 'enable_permalinks_settings', 300 );
+	// process the $_POST variable after all settings have been
+	// registered so they are whitelisted
+	add_action( 'admin_init', 'enable_permalinks_settings', 300 );
 
-function enable_permalinks_settings() {
-	global $new_whitelist_options;
+	function enable_permalinks_settings() {
+		global $new_whitelist_options;
 
-	// save hook for permalinks page
-	if ( isset( $_POST['permalink_structure'] ) || isset( $_POST['category_base'] ) ) {
-		check_admin_referer( 'update-permalink' );
+		// save hook for permalinks page
+		if ( isset( $_POST['permalink_structure'] ) || isset( $_POST['category_base'] ) ) {
+			check_admin_referer( 'update-permalink' );
 
-		$option_page = 'permalink';
+			$option_page = 'permalink';
 
-		$capability = 'manage_options';
-		$capability = apply_filters( "option_page_capability_{$option_page}", $capability );
+			$capability = 'manage_options';
+			$capability = apply_filters( "option_page_capability_{$option_page}", $capability );
 
-		if ( ! current_user_can( $capability ) ) {
-			wp_die( __( 'Cheatin&#8217; uh?' ) );
-		}
-
-		// get extra permalink options
-		$options = $new_whitelist_options[ $option_page ];
-
-		if ( $options ) {
-			foreach ( $options as $option ) {
-				$option = trim( $option );
-				$value = null;
-				if ( isset( $_POST[ $option ] ) ) {
-					$value = $_POST[ $option ];
-				}
-				if ( ! is_array( $value ) ) {
-					$value = trim( $value );
-				}
-				$value = stripslashes_deep( $value );
-				update_option( $option, $value );
+			if ( ! current_user_can( $capability ) ) {
+				wp_die( __( 'Cheatin&#8217; uh?' ) );
 			}
-		}
 
-		/**
-		 *  Handle settings errors
-		 */
-		set_transient( 'settings_errors', get_settings_errors(), 30 );
+			// get extra permalink options
+			$options = $new_whitelist_options[ $option_page ];
+
+			if ( $options ) {
+				foreach ( $options as $option ) {
+					$option = trim( $option );
+					$value = null;
+					if ( isset( $_POST[ $option ] ) ) {
+						$value = $_POST[ $option ];
+					}
+					if ( ! is_array( $value ) ) {
+						$value = trim( $value );
+					}
+					$value = stripslashes_deep( $value );
+					update_option( $option, $value );
+				}
+			}
+
+			/**
+			 *  Handle settings errors
+			 */
+			set_transient( 'settings_errors', get_settings_errors(), 30 );
+		}
 	}
+
 }
