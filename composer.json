@@ -1,0 +1,13 @@
+{
+    "name": "humanmade/wp-permastructure",
+    "description": "Post type rewrite features for WordPress",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Robert O'Rourke",
+            "email": "rob@humanmade.com"
+        }
+    ],
+    "require": {}
+}
