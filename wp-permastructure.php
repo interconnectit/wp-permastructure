@@ -19,9 +19,9 @@ License: GPLv2 or later
  * eg:
  *
  * register_post_type( 'my_type', array(
- *        ...
- *        'rewrite' => array( 'permastruct' => '/%custom_taxonomy%/%author%/%postname%/' ),
- *    ...
+ *   ...
+ *   'rewrite' => array( 'permastruct' => '/%custom_taxonomy%/%author%/%postname%/' ),
+ *   ...
  * ) );
  *
  * Alternatively you can set the permalink structure from the permalinks settings page
@@ -158,8 +158,7 @@ class wp_permastructure {
 			$filtered = wp_pre_kses_less_than( $filtered );
 			// This will strip extra whitespace for us.
 			$filtered = wp_strip_all_tags( $filtered, true );
-		}
-		else {
+		} else {
 			$filtered = trim( preg_replace( '/[\r\n\t ]+/', ' ', $filtered ) );
 		}
 
@@ -234,8 +233,7 @@ class wp_permastructure {
 					$rules[ $regex ] = $query . ( preg_match( '/(&|\?)(attachment|pagename)=/', $query ) ? '' : $post_type_query );
 					// Ensure permalinks that match a custom taxonomy path don't get swallowed.
 					$wp_rewrite->extra_rules_top[ $regex ] = $rules[ $regex ];
-				}
-				else {
+				} else {
 					unset( $rules[ $regex ] );
 				}
 			}
@@ -301,11 +299,9 @@ class wp_permastructure {
 		// prefer option over default
 		if ( !empty( $permastruct ) ) {
 			$permalink = $permastruct;
-		}
-		elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) && ! empty( $post_type->rewrite[ 'permastruct' ] ) ) {
+		} elseif ( isset( $post_type->rewrite[ 'permastruct' ] ) && ! empty( $post_type->rewrite[ 'permastruct' ] ) ) {
 			$permalink = $post_type->rewrite[ 'permastruct' ];
-		}
-		else {
+		} else {
 			return $post_link;
 		}
 
@@ -377,8 +373,7 @@ class wp_permastructure {
 			}
 			$permalink = home_url( str_replace( $rewritecode, $rewritereplace, $permalink ) );
 			$permalink = user_trailingslashit( $permalink, 'single' );
-		}
-		else { // if they're not using the fancy permalink option
+		} else { // if they're not using the fancy permalink option
 			$permalink = home_url( '?p=' . $post->ID );
 		}
 
@@ -417,8 +412,7 @@ if ( ! function_exists( 'get_term_parents' ) ) {
 
 		if ( $nicename ) {
 			$name = $parent->slug;
-		}
-		else {
+		} else {
 			$name = $parent->cat_name;
 		}
 
@@ -429,8 +423,7 @@ if ( ! function_exists( 'get_term_parents' ) ) {
 
 		if ( $link ) {
 			$chain .= '<a href="' . get_term_link( $parent->term_id, $taxonomy ) . '" title="' . esc_attr( sprintf( __( 'View all posts in %s' ), $parent->name ) ) . '">' . $name . '</a>' . $separator;
-		}
-		else {
+		} else {
 			$chain .= $name . $separator;
 		}
 
