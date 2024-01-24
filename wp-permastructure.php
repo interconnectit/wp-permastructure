@@ -3,7 +3,7 @@
 Plugin Name: WP Permastructure
 Plugin URI: https://github.com/interconnectit/wp-permastructure
 Description: Adds the ability to define permalink structures for any custom post type using rewrite tags.
-Version: 1.5.1
+Version: 1.6.0
 Author: Robert O'Rourke
 Author URI: http://interconnectit.com
 License: GPLv2 or later
@@ -31,6 +31,8 @@ License: GPLv2 or later
 /**
  * Changelog
  *
+ * 1.6: Sort permastructs by length for specifity, allow filtering whether to expand hierarchical terms
+ * 1.5: Ensure rewrites prefixed with taxonomies are checked before the taxonomies themselves
  * 1.4: Handles sample filters without the need for the get post call
  * 1.3: Fixed permalink sanitisation, was truncating the third placeholder for some reason
  * 1.2: Fixed attachment URL rewrites, fixed edge case where permastruct is %postname% only
@@ -211,6 +213,11 @@ class wp_permastructure {
 			$permastructs[ $type->rewrite[ 'permastruct' ] ][] = $type->name;
 		}
 
+		// Sort permastructs by longest to shortest, e.g. higher specificity to lower.
+		uksort( $permastructs, function ( $a, $b ) {
+			return mb_strlen( $b ) <=> mb_strlen( $a );
+		} );
+
 		$rules = array();
 
 		// add our permastructs scoped to the post types - overwriting any keys that already exist
@@ -225,7 +232,7 @@ class wp_permastructure {
 			$post_type_rules_temp = $wp_rewrite->generate_rewrite_rules( $struct, EP_PERMALINK, false, true, false, false, true );
 			foreach ( $post_type_rules_temp as $regex => $query ) {
 				if ( preg_match( '/(&|\?)(cpage|attachment|p|name|pagename)=/', $query ) ) {
-					$post_type_query = ( count( $post_types ) < 2 ? '&post_type=' . $post_types[ 0 ] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
+					$post_type_query = ( count( $post_types ) < 2 ? '&post_type=' . $post_types[0] : '&post_type[]=' . join( '&post_type[]=', array_unique( $post_types ) ) );
 					$rules[ $regex ] = $query . ( preg_match( '/(&|\?)(attachment|pagename)=/', $query ) ? '' : $post_type_query );
 					// Ensure permalinks that match a custom taxonomy path don't get swallowed.
 					$wp_rewrite->extra_rules_top[ $regex ] = $rules[ $regex ];
@@ -314,11 +321,8 @@ class wp_permastructure {
 				if ( strpos( $permalink, '%' . $taxonomy . '%' ) !== false ) {
 					$terms = get_the_terms( $post->ID, $taxonomy );
 					if ( $terms && ! is_wp_error( $terms ) ) {
-						if ( function_exists( 'wp_list_sort' ) ) {
-							$terms = wp_list_sort( $terms, 'term_id', 'ASC' );  // order by term_id ASC
-						} else {
-							usort( $terms, '_usort_terms_by_ID' ); // order by term_id ASC
-						}
+						// order by term_id ASC.
+						$terms = wp_list_sort( $terms, 'term_id', 'ASC' );
 
 						/**
 						 * Filter the term that gets used in the `$tax` permalink token.
@@ -329,8 +333,17 @@ class wp_permastructure {
 						 */
 						$term_object = apply_filters( "post_link_{$taxonomy}", reset( $terms ), $terms, $post );
 
+						/**
+						 * Filter whether to expand child term paths.
+						 *
+						 * @param bool $allow_hierarchy Whether to expand child terms to include term parents.
+						 * @param WP_Term $term Current term object selected.
+						 * @param WP_Post $post The post in question.
+						 */
+						$allow_hierarchy = apply_filters( "post_link_{$taxonomy}_allow_hierarchy", $taxonomy_object->hierarchical, $term_object, $post );
+
 						$term = $term_object->slug;
-						if ( $taxonomy_object->hierarchical && $parent = $term_object->parent ) {
+						if ( $allow_hierarchy && $parent = $term_object->parent ) {
 							$term = get_term_parents( $parent, $taxonomy, false, '/', true ) . $term;
 						}
 					}
